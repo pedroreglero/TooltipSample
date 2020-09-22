@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Windows.Input;
 using Xamarin.Forms;
 
 namespace ToolTipSample.Effects
@@ -12,7 +15,7 @@ namespace ToolTipSample.Effects
         Right
     }
 
-  
+
     public static class TooltipEffect
     {
 
@@ -25,7 +28,20 @@ namespace ToolTipSample.Effects
         public static readonly BindableProperty TextProperty =
           BindableProperty.CreateAttached("Text", typeof(string), typeof(TooltipEffect), string.Empty);
         public static readonly BindableProperty PositionProperty =
-          BindableProperty.CreateAttached("Position", typeof(TooltipPosition), typeof(TooltipEffect),TooltipPosition.Bottom);
+          BindableProperty.CreateAttached("Position", typeof(TooltipPosition), typeof(TooltipEffect), TooltipPosition.Bottom);
+        public static readonly BindableProperty DismishedCommandProperty =
+            BindableProperty.CreateAttached("DismishedCommand", typeof(ICommand), typeof(TooltipEffect), null);
+        
+
+        public static ICommand GetDismishedCommand(BindableObject view)
+        {
+            return (ICommand)view.GetValue(DismishedCommandProperty);
+        }
+
+        public static void SetDismishedCommand(BindableObject view, ICommand value)
+        {
+            view.SetValue(DismishedCommandProperty, value);
+        }
 
         public static bool GetHasTooltip(BindableObject view)
         {
@@ -109,5 +125,4 @@ namespace ToolTipSample.Effects
 
         }
     }
-
 }

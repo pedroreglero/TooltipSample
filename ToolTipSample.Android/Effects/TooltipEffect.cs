@@ -1,8 +1,18 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
+using System.Text;
+using System.Windows.Input;
+using Android.App;
+using Android.Content;
+using Android.OS;
+using Android.Runtime;
 using Android.Views;
-using Com.Tomergoldst.Tooltips;
 using ToolTipSample.Droid.Effects;
 using ToolTipSample.Effects;
+using Android.Widget;
+using Com.Tomergoldst.Tooltips;
 using Xamarin.Forms;
 using Xamarin.Forms.Platform.Android;
 using static Com.Tomergoldst.Tooltips.ToolTipsManager;
@@ -11,11 +21,11 @@ using static Com.Tomergoldst.Tooltips.ToolTipsManager;
 [assembly: ExportEffect(typeof(DroidTooltipEffect), nameof(TooltipEffect))]
 namespace ToolTipSample.Droid.Effects
 {
-    public class DroidTooltipEffect : PlatformEffect 
+    public class DroidTooltipEffect : PlatformEffect
     {
         ToolTip toolTipView;
         ToolTipsManager _toolTipsManager;
-        ITipListener listener;
+        TipListener listener;
 
         public DroidTooltipEffect()
         {
@@ -23,17 +33,16 @@ namespace ToolTipSample.Droid.Effects
             _toolTipsManager = new ToolTipsManager(listener);
         }
 
-        void OnTap(object sender, EventArgs e)
+        protected override void OnAttached()
         {
             var control = Control ?? Container;
-
+            listener.command = TooltipEffect.GetDismishedCommand(Element);
             var text = TooltipEffect.GetText(Element);
 
             if (!string.IsNullOrEmpty(text))
             {
-               ToolTip.Builder builder;
+                ToolTip.Builder builder;
                 var parentContent = control.RootView;
-               
                 var position = TooltipEffect.GetPosition(Element);
                 switch (position)
                 {
@@ -54,34 +63,37 @@ namespace ToolTipSample.Droid.Effects
                 builder.SetAlign(ToolTip.AlignLeft);
                 builder.SetBackgroundColor(TooltipEffect.GetBackgroundColor(Element).ToAndroid());
                 builder.SetTextColor(TooltipEffect.GetTextColor(Element).ToAndroid());
-             
+
                 toolTipView = builder.Build();
-               
+                builder.Dispose();
                 _toolTipsManager?.Show(toolTipView);
+                listener.toolTipsManager = _toolTipsManager;
             }
-
-        }
-
-
-        protected override void OnAttached()
-        {
-            var control = Control ?? Container;
-            control.Click += OnTap;
         }
 
 
         protected override void OnDetached()
         {
             var control = Control ?? Container;
-            control.Click -= OnTap;
             _toolTipsManager.FindAndDismiss(control);
         }
 
         class TipListener : Java.Lang.Object, ITipListener
         {
+            public ICommand command { get; set; }
+            public ToolTipsManager toolTipsManager { get; set; }
+
+            public TipListener()
+            {
+
+            }
             public void OnTipDismissed(Android.Views.View p0, int p1, bool p2)
             {
-             
+                if (command != null)
+                    command.Execute(null);
+
+                if (toolTipsManager != null)
+                    toolTipsManager.Dispose();
             }
         }
     }
