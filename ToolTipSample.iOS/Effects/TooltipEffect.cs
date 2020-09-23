@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
-using ToolTipSample.Effects;
-using ToolTipSample.iOS.Effects;
+using System.Linq;
+using System.Text;
+using System.Windows.Input;
+using Foundation;
 using UIKit;
 using Xamarin.Forms;
 using Xamarin.Forms.Platform.iOS;
@@ -14,7 +17,7 @@ namespace ToolTipSample.iOS.Effects
     {
 
         EasyTipView.EasyTipView tooltip;
-        UITapGestureRecognizer tapGestureRecognizer;
+        ICommand command;
 
         public iOSTooltipEffect()
         {
@@ -22,7 +25,18 @@ namespace ToolTipSample.iOS.Effects
             tooltip.DidDismiss += OnDismiss;
         }
 
-        void OnTap(object sender, EventArgs e)
+
+        void OnDismiss(object sender, EventArgs e)
+        {
+            if (command != null)
+                command.Execute(null);
+
+            if (tooltip != null)
+                tooltip.Dispose();
+        }
+
+
+        protected override void OnAttached()
         {
             var control = Control ?? Container;
 
@@ -33,6 +47,7 @@ namespace ToolTipSample.iOS.Effects
                 tooltip.BubbleColor = TooltipEffect.GetBackgroundColor(Element).ToUIColor();
                 tooltip.ForegroundColor = TooltipEffect.GetTextColor(Element).ToUIColor();
                 tooltip.Text = new Foundation.NSString(text);
+                command = TooltipEffect.GetDismishedCommand(Element);
                 UpdatePosition();
 
                 var window = UIApplication.SharedApplication.KeyWindow;
@@ -45,52 +60,10 @@ namespace ToolTipSample.iOS.Effects
 
                 tooltip?.Show(control, vc.View, true);
             }
-
-        }
-
-        void OnDismiss(object sender, EventArgs e)
-        {
-            // do something on dismiss
-        }
-
-
-        protected override void OnAttached()
-        {
-            var control = Control ?? Container;
-
-            if (control is UIButton)
-            {
-                var btn = Control as UIButton;
-                btn.TouchUpInside += OnTap;
-            }
-            else
-            {
-                tapGestureRecognizer = new UITapGestureRecognizer((UITapGestureRecognizer obj) =>
-                {
-                    OnTap(obj, EventArgs.Empty);
-                });
-                control.UserInteractionEnabled = true;
-                control.AddGestureRecognizer(tapGestureRecognizer);
-            }
         }
 
         protected override void OnDetached()
         {
-
-            var control = Control ?? Container;
-
-            if (control is UIButton)
-            {
-                var btn = Control as UIButton;
-                btn.TouchUpInside -= OnTap;
-            }
-            else
-            {
-                if (tapGestureRecognizer != null)
-
-                    control.RemoveGestureRecognizer(tapGestureRecognizer);
-
-            }
             tooltip?.Dismiss();
         }
 
